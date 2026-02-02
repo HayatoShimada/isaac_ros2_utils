@@ -33,6 +33,8 @@ setup(
             'spawn_robot = isaac_ros2_scripts.spawn_robot:main',
             'add_usd = isaac_ros2_scripts.add_usd:main',
             'publish_tf = isaac_ros2_scripts.publish_tf:main',
+            'isaaclab_api = isaac_ros2_scripts.isaaclab_api:main',
+            'prepare_robot_for_isaaclab = isaac_ros2_scripts.prepare_robot_for_isaaclab:main',
         ],
     },
 )
