@@ -28,6 +28,7 @@ import uvicorn
 class CommandType(Enum):
     SPAWN_ROBOT = "spawn_robot"
     ADD_USD = "add_usd"
+    SPAWN_PRIMITIVE = "spawn_primitive"
     PUBLISH_TF = "publish_tf"
     PLAY = "play"
     PAUSE = "pause"
@@ -64,6 +65,24 @@ class AddUsdRequest(BaseModel):
     roll: float = Field(default=0.0, description="Roll angle in radians")
     pitch: float = Field(default=0.0, description="Pitch angle in radians")
     yaw: float = Field(default=0.0, description="Yaw angle in radians")
+
+
+class SpawnPrimitiveRequest(BaseModel):
+    """Request model for spawning a physics-enabled primitive."""
+    shape: str = Field(default="cube", description="Shape: cube, sphere, or cylinder")
+    name: str = Field(default="cube_0", description="Prim name under /World/")
+    size: float = Field(default=0.04, description="Size in meters")
+    x: float = Field(default=0.5, description="X position")
+    y: float = Field(default=0.0, description="Y position")
+    z: float = Field(default=0.1, description="Z position")
+    roll: float = Field(default=0.0, description="Roll in radians")
+    pitch: float = Field(default=0.0, description="Pitch in radians")
+    yaw: float = Field(default=0.0, description="Yaw in radians")
+    mass: float = Field(default=0.1, description="Mass in kg")
+    color: Optional[list] = Field(default=None, description="RGB color [r, g, b] 0-1")
+    static_friction: float = Field(default=1.0, description="Static friction coefficient")
+    dynamic_friction: float = Field(default=1.0, description="Dynamic friction coefficient")
+    restitution: float = Field(default=0.0, description="Bounciness")
 
 
 class PublishTfRequest(BaseModel):
@@ -151,6 +170,28 @@ class IsaacSimRestApi:
                     raise HTTPException(status_code=500, detail=result.get("error", "Unknown error"))
             except queue.Empty:
                 raise HTTPException(status_code=504, detail="Timeout waiting for add_usd operation")
+
+        @self.app.post("/spawn_primitive", response_model=ResponseModel)
+        async def spawn_primitive(request: SpawnPrimitiveRequest):
+            """Spawn a physics-enabled primitive (cube, sphere, cylinder)."""
+            cmd = Command(
+                cmd_type=CommandType.SPAWN_PRIMITIVE,
+                params=request.model_dump()
+            )
+            self.command_queue.put(cmd)
+
+            try:
+                result = cmd.result_queue.get(timeout=10.0)
+                if result.get("success"):
+                    return ResponseModel(
+                        success=True,
+                        message=f"Primitive '{request.name}' spawned",
+                        data=result.get("data")
+                    )
+                else:
+                    raise HTTPException(status_code=500, detail=result.get("error", "Unknown error"))
+            except queue.Empty:
+                raise HTTPException(status_code=504, detail="Timeout")
 
         @self.app.post("/publish_tf", response_model=ResponseModel)
         async def publish_tf(request: PublishTfRequest):
@@ -249,6 +290,8 @@ class IsaacSimRestApi:
                 return self._spawn_robot(cmd.params)
             elif cmd.cmd_type == CommandType.ADD_USD:
                 return self._add_usd(cmd.params)
+            elif cmd.cmd_type == CommandType.SPAWN_PRIMITIVE:
+                return self._spawn_primitive(cmd.params)
             elif cmd.cmd_type == CommandType.PUBLISH_TF:
                 return self._publish_tf(cmd.params)
             elif cmd.cmd_type == CommandType.PLAY:
@@ -337,6 +380,13 @@ class IsaacSimRestApi:
             "success": True,
             "data": {"prim_path": prim_path}
         }
+
+    def _spawn_primitive(self, params: dict) -> dict:
+        """Spawn a physics-enabled primitive."""
+        import spawn_primitive
+        prim = spawn_primitive.main(**params)
+        prim_path = prim.GetPath().pathString if prim else None
+        return {"success": True, "data": {"prim_path": prim_path}}
 
     def _publish_tf(self, params: dict) -> dict:
         """Publish TF for a specific robot link."""
