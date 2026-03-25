@@ -71,7 +71,10 @@ class SpawnPrimitiveRequest(BaseModel):
     """Request model for spawning a physics-enabled primitive."""
     shape: str = Field(default="cube", description="Shape: cube, sphere, or cylinder")
     name: str = Field(default="cube_0", description="Prim name under /World/")
-    size: float = Field(default=0.04, description="Size in meters")
+    size: float = Field(default=0.04, description="Size in meters (uniform)")
+    scale_x: float = Field(default=0.0, description="Non-uniform X scale (0=use size)")
+    scale_y: float = Field(default=0.0, description="Non-uniform Y scale (0=use size)")
+    scale_z: float = Field(default=0.0, description="Non-uniform Z scale (0=use size)")
     x: float = Field(default=0.5, description="X position")
     y: float = Field(default=0.0, description="Y position")
     z: float = Field(default=0.1, description="Z position")
