@@ -148,12 +148,12 @@ def main():
     dome_light = UsdLux.DomeLight.Define(stage_handle, "/DomeLight")
     dome_light.CreateIntensityAttr(2000.0)
     dome_light.CreateTextureFormatAttr("latlong")
-    # SphereLight: ロボット作業エリア上方に配置
+    # SphereLight: カメラ画角外の高い位置に配置
     sphere_light = UsdLux.SphereLight.Define(stage_handle, "/SphereLight")
     sphere_light.CreateIntensityAttr(50000.0)
-    sphere_light.CreateRadiusAttr(0.2)
-    UsdGeom.XformCommonAPI(sphere_light).SetTranslate(Gf.Vec3d(0.5, 0.0, 2.0))
-    print("[Isaac Sim] Default lighting added (DomeLight + SphereLight at [0.5, 0, 2.0])")
+    sphere_light.CreateRadiusAttr(0.1)
+    UsdGeom.XformCommonAPI(sphere_light).SetTranslate(Gf.Vec3d(0.3, 0.5, 3.0))
+    print("[Isaac Sim] Default lighting added (DomeLight + SphereLight at [0.3, 0.5, 3.0])")
 
     # Start REST API server
     import rest_api_server as api_module
