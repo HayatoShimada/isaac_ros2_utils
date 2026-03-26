@@ -120,7 +120,7 @@ def main():
     my_world = World(stage_units_in_meters=1.0, physics_dt=1.0 / internal_frame_per_second, rendering_dt=1.0 / internal_frame_per_second)
 
     import omni.kit.commands
-    from pxr import Sdf, Gf, UsdPhysics, PhysxSchema
+    from pxr import Sdf, Gf, UsdGeom, UsdPhysics, PhysxSchema
 
     omni.usd.get_context().open_stage(usd_path)
 
@@ -141,6 +141,19 @@ def main():
     physxSceneAPI.CreateBroadphaseTypeAttr("MBP")
     physxSceneAPI.CreateSolverTypeAttr("PGS")
     physxSceneAPI.CreateTimeStepsPerSecondAttr(time_steps_per_second)
+
+    # Add default lighting so cameras can render the scene
+    from pxr import UsdLux
+    # DomeLight: 環境光（シーン全体を均一に照らす）
+    dome_light = UsdLux.DomeLight.Define(stage_handle, "/DomeLight")
+    dome_light.CreateIntensityAttr(2000.0)
+    dome_light.CreateTextureFormatAttr("latlong")
+    # SphereLight: ロボット作業エリア上方に配置
+    sphere_light = UsdLux.SphereLight.Define(stage_handle, "/SphereLight")
+    sphere_light.CreateIntensityAttr(50000.0)
+    sphere_light.CreateRadiusAttr(0.2)
+    UsdGeom.XformCommonAPI(sphere_light).SetTranslate(Gf.Vec3d(0.5, 0.0, 2.0))
+    print("[Isaac Sim] Default lighting added (DomeLight + SphereLight at [0.5, 0, 2.0])")
 
     # Start REST API server
     import rest_api_server as api_module
